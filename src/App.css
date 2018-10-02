@@ -1,0 +1,54 @@
+.queryResults {
+  margin: 5px;
+}
+
+.input {
+  height: 40px;
+  width: 100%;
+  font-size: 20px;
+  margin-bottom: 10px !important;
+}
+
+.container {
+  display: flex;
+  width: 90%;
+}
+.container > * {
+  width: 35%;
+  padding: 0px !important;
+}
+.rightCard {
+  margin-top: 80px;
+}
+
+.app {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; 
+}
+
+.chooseFee {
+  display: flex;
+  width: 100%;
+  flex-direction: row-reverse;
+  padding: 20px;
+}
+
+.product-button-container {
+  width: 100%;
+  display: flex;
+}
+
+.displayFee {
+  margin: 10px;
+}
+
+.space {
+  justify-content: space-around;
+}
