@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import './App.css'
-import { Page, Card, Button, ProgressBar, Select } from '@shopify/polaris'
+import { Page, Card, Button, Spinner, Select, OptionList, ProgressBar } from '@shopify/polaris'
 import axios from 'axios'
 
 class App extends Component {
@@ -10,22 +10,25 @@ class App extends Component {
     queryResults: [],
     customerList: [],
     pagination: 1,
+    pagination2: 1,
     productResults: [],
     feeChosen: false,
     fee: [],
     isLoading: false,
-    progress: 0,
-    sentFees: false,
-    selected: 'All'
+    sentStudents: false,
+    selected: 'All',
+    students: [],
+    shipped: [],
+    progress: 0
   }
   
   componentDidMount(){
     axios.get(`http://localhost:5001/database`).then(res => {
+      console.log(res.data)
       this.setState({ 
         results: res.data[0].recordset,
         productResults: res.data[1].recordset
       })
-      console.log(this.state.results, this.state.productResults)
     })
   }
 
@@ -33,8 +36,8 @@ class App extends Component {
     this.setState({
       query: this.search.value
     }, () => {
-      if(this.state.query && this.state.query.length > 3) {
-        if(this.state.query.length % 2 === 0) {
+      if(this.state.query && this.state.query.length > 2) {
+        if(this.state.query.length % 1 === 0) {
           this.getInfo()
         }
       }
@@ -61,7 +64,6 @@ class App extends Component {
   }
 
   handleProductAction = (e) => {
-    console.log(e)
     let arr = []
     arr.push(e)
     this.setState({ 
@@ -73,29 +75,38 @@ class App extends Component {
 
   handleRemove = (e, i) => {
     let arr = this.state.customerList
+    console.log(e)
     arr.splice(i, 1)
     this.setState({customerList: arr})
   }
 
   handlePageChange = () => {
     if(this.state.pagination === 1) {
-      this.setState({ pagination: 2, queryResults: [], sentFees: false })
+      this.setState({ pagination: 2, queryResults: [] })
     } else {
-      this.setState({ pagination: 1, queryResults: [], sentFees: false  })
+      this.setState({ pagination: 1, queryResults: [] })
     }
   }
 
-  handleSubmitFees = () => {
+  handlePage2Change = () => {
+    if(this.state.pagination2 === 1) {
+      this.setState({ pagination2: 2 })
+    } else {
+      this.setState({ pagination2: 1 })
+    }
+  }
+
+  handleSubmitStudents = () => {
     this.setState({ isLoading: true })
- 
-    let int = setInterval(() => {
-      if(this.state.progress >= 100) {
-        this.setState({ isLoading: !this.state.isLoading, sentFees: true, feeChosen: false, progress: 0, queryResults: [], fee: [], customerList: []})
-        clearInterval(int)
-      } else {
-        this.setState({progress: this.state.progress + 10})
-      }
-    }, 2000)
+    let obj = {
+      product: this.state.fee,
+      customers: this.state.customerList
+    }
+
+    axios.post(`http://localhost:5001/sendFee`, obj).then(res => {
+      console.log(res.data)
+      this.setState({ isLoading: !this.state.isLoading, sentStudents: true, queryResults: [], pagination2: 2, students: res.data})
+    })
   }
   
   handleSelectChange = (newValue) => {
@@ -112,8 +123,25 @@ class App extends Component {
     return options
   }
 
-  render() {
+  handleToggle = (ep) => {
+    let arr = this.state.shipped
+    arr.push(ep)
+    this.setState({ shipped: arr })
+    console.log(this.state.shipped)
+  }
 
+  submitFee = () => {
+    this.setState({ sentStudents: false })
+    let int = setInterval(() => {
+      if(this.state.progress >= 100) {
+        clearInterval(int)
+      } else {
+        this.setState({progress: this.state.progress + 10})
+      }
+    }, 500)
+  }
+
+  render() {
     const display = this.state.queryResults.map((ep, i) => {
       if(this.state.pagination === 1) {
         return (
@@ -149,6 +177,7 @@ class App extends Component {
         </Card>
       )
     })
+
     const displayList = this.state.customerList.map((ep, i) => {
       return(
         <Card.Section key={i}>
@@ -160,6 +189,29 @@ class App extends Component {
       )
     })
 
+    const displayStudents = this.state.students.map((ep, i) => {
+      for(let item in this.state.customerList) {
+        if(parseInt(this.state.customerList[item].id, 10) === ep.owner_id) {
+          return (
+            <Card.Section key={i}>
+              <div className='button-container'>
+                <div>
+                  <div>Parent:</div>
+                  <div>Student:</div>
+                </div>
+                <div>
+                  <div><p>{this.state.customerList[item].full_name}</p></div>
+                  <div><strong>{ep.child_name}</strong></div>
+                </div>
+                <div>
+                  <input  type="checkbox" className="check check2" onClick={() => this.handleToggle(ep)}/>
+                </div>
+              </div>
+            </Card.Section>
+          )
+        }
+      }
+    })
 
     return (
       <div className='app'>
@@ -222,26 +274,56 @@ class App extends Component {
             </Page>
           }
 
+          {this.state.pagination2 === 1 && 
           <Page
             fullWidth
+            title=' '
+            pagination={{ 
+              hasPrevious: true,
+              hasNext: true,
+              onNext: this.handlePage2Change,
+              onPrevious: this.handlePage2Change
+            }}
           >
             <div className="rightCard">
               <Card title="Parent List">
                 <Card.Section>
                   <p>Below is a list of parents that will get fee's added</p>
                 </Card.Section>
+
                 {displayList}
 
                 {!this.state.isLoading && <div className={`chooseFee ${this.state.feeChosen ? 'space' : ''}`}>
                   {this.state.customerList.length > 0 && this.state.pagination === 1 && <Button size="slim" onClick={this.handlePageChange}>Choose Fee</Button>}
                   {this.state.pagination === 2 && <Button size="slim" onClick={this.handlePageChange}>Choose Parent</Button>}
-                  {this.state.feeChosen && <Button primary onClick={this.handleSubmitFees}>Submit Fee's</Button>}
+                  {this.state.feeChosen && <Button primary onClick={this.handleSubmitStudents}>Get Students</Button>}
                 </div>}
-                {this.state.isLoading && <div><p>Attaching fees...</p><ProgressBar progress={this.state.progress} size="small" /></div>}
-                {this.state.sentFees && <p className='displayFee'>Fees have been attached!</p>}
+                {this.state.isLoading && <div className='sendFeeButton'><p>Getting Students...</p><Spinner size='small' color='teal' /></div>}
               </Card>
             </div>
-          </Page>
+          </Page>}
+          {this.state.pagination2 === 2 && 
+          <Page
+            fullWidth
+            title=' '
+            pagination={{ 
+              hasPrevious: true,
+              hasNext: true,
+              onNext: this.handlePage2Change,
+              onPrevious: this.handlePage2Change
+            }}
+          >
+            <div className="rightCard">
+              <Card title="Student List">
+                <Card.Section>
+                  <p>Please select the students to apply the fee to.</p>
+                </Card.Section>
+                {displayStudents}
+                {this.state.sentStudents && <div className='sendFeeButton'><Button primary onClick={this.submitFee}>Send Fee</Button></div>}
+                {!this.state.sentStudents && <ProgressBar progress={this.state.progress} size="small" />}
+              </Card>
+            </div>
+          </Page>}
         </div>
       </div>
     );

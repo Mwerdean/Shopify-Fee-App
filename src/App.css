@@ -18,13 +18,14 @@
   padding: 0px !important;
 }
 .rightCard {
-  margin-top: 80px;
+  margin-top: 40px;
 }
 
 .app {
   width: 100%;
   display: flex;
   justify-content: center;
+  margin-bottom: 20px;
 }
 
 .button-container {
@@ -45,10 +46,62 @@
   display: flex;
 }
 
-.displayFee {
+.displayFee:first-child {
   margin: 10px;
 }
 
 .space {
   justify-content: space-around;
 }
+
+.sendFeeButton {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+
+
+
+.check{
+  display: block;
+  margin-bottom: 20px;
+  position: relative;
+  width: 60px;
+  height: 30px;
+  -webkit-appearance: none;
+}
+
+/* Check 2*/
+.check2{
+  background: grey;
+  outline: none;
+  border-radius: 60px;
+  box-shadow: inset 0 0 5px rgba(0,0,0,.2);
+  transition: .5s;
+}
+
+.check2:checked{
+  background: teal;
+}
+
+.check2:before{
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 60px;
+  top: 0;
+  left: 0;
+  transform: scale(.8);
+  box-shadow: 0 2px 15px rgba(0,0,0,.2);
+  background: #fff;
+  transition: .5s;
+}
+
+.check2:checked:before{
+  left: 50%;
+}
+
+
