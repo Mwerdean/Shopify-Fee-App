@@ -19,7 +19,8 @@ class App extends Component {
     selected: 'All',
     students: [],
     shipped: [],
-    progress: 0
+    progress: 0,
+    restart: false
   }
   
   componentDidMount(){
@@ -98,13 +99,13 @@ class App extends Component {
 
   handleSubmitStudents = () => {
     this.setState({ isLoading: true })
-    let obj = {
+    const obj = {
       product: this.state.fee,
       customers: this.state.customerList
     }
 
-    axios.post(`http://localhost:5001/sendFee`, obj).then(res => {
-      console.log(res.data)
+    axios.post(`http://localhost:5001/sendStudents`, obj).then(res => {
+      console.log('sendStudents Data:', res.data)
       this.setState({ isLoading: !this.state.isLoading, sentStudents: true, queryResults: [], pagination2: 2, students: res.data})
     })
   }
@@ -125,20 +126,63 @@ class App extends Component {
 
   handleToggle = (ep) => {
     let arr = this.state.shipped
-    arr.push(ep)
-    this.setState({ shipped: arr })
+    let isTrue = false
+    let position = null
+
+    for(let k = 0; k<arr.length; k++) {
+      if(arr[k] === ep) {
+        isTrue = true
+        position = k
+      }
+    }
+
+    if(isTrue) {
+      arr.splice(position, 1)
+    } else {
+      arr.push(ep)
+    }
+    this.setState({ shipped: arr})
     console.log(this.state.shipped)
   }
 
   submitFee = () => {
-    this.setState({ sentStudents: false })
-    let int = setInterval(() => {
-      if(this.state.progress >= 100) {
-        clearInterval(int)
-      } else {
-        this.setState({progress: this.state.progress + 10})
-      }
-    }, 500)
+    this.setState({ sentStudents: false, isLoading: true })
+    const obj = {
+      product: this.state.fee,
+      customers: this.state.customerList,
+      shipped: this.state.shipped
+    }
+    axios.post(`http://localhost:5001/submitFee`, obj).then(res => {
+      console.log(res.data)
+    this.setState({isLoading: false, restart: true})
+
+    })
+    // let int = setInterval(() => {
+    //   if(this.state.progress >= 100) {
+    //     clearInterval(int)
+    //   } else {
+    //     this.setState({progress: this.state.progress + 10})
+    //   }
+    // }, 500)
+  }
+
+  continue = () => {
+    this.setState({
+      query: '',
+      queryResults: [],
+      customerList: [],
+      pagination: 1,
+      pagination2: 1,
+      feeChosen: false,
+      fee: [],
+      isLoading: false,
+      sentStudents: false,
+      selected: 'All',
+      students: [],
+      shipped: [],
+      progress: 0,
+      restart: false
+    })
   }
 
   render() {
@@ -182,7 +226,7 @@ class App extends Component {
       return(
         <Card.Section key={i}>
           <div>
-            <div className='button-container'><p>{ep.first_name + " " + ep.last_name}</p><button type="button" className='Polaris-Button Polaris-Button--plain' onClick={() => this.handleRemove(ep, i)}><span className="Polaris-Button__Content">remove</span></button></div>
+            <div className='button-container'><p>{ep.first_name + " " + ep.last_name}</p><button type="button" className='Polaris-Button Polaris-Button--plain' onClick={() => this.handleRemove(ep)}><span className="Polaris-Button__Content">remove</span></button></div>
             <div className='button-container'>{ep.email}</div>
           </div>
         </Card.Section>
@@ -204,7 +248,7 @@ class App extends Component {
                   <div><strong>{ep.child_name}</strong></div>
                 </div>
                 <div>
-                  <input  type="checkbox" className="check check2" onClick={() => this.handleToggle(ep)}/>
+                  <input  type="checkbox" className="check check2" onClick={() => this.handleToggle(ep, i)}/>
                 </div>
               </div>
             </Card.Section>
@@ -320,7 +364,8 @@ class App extends Component {
                 </Card.Section>
                 {displayStudents}
                 {this.state.sentStudents && <div className='sendFeeButton'><Button primary onClick={this.submitFee}>Send Fee</Button></div>}
-                {!this.state.sentStudents && <ProgressBar progress={this.state.progress} size="small" />}
+                {this.state.isLoading && <div className='sendFeeButton'><p>Attaching Fees...</p><Spinner size='small' color='teal' /></div>}
+                {this.state.restart && <div><div className='sendFeeButton'>Fees attached!</div><div className='sendFeeButton'><Button primary onClick={this.continue}>Continue</Button></div></div>}
               </Card>
             </div>
           </Page>}
