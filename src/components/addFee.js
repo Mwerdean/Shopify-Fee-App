@@ -72,8 +72,9 @@ class AddFee extends Component {
     this.setState({ 
       feeChosen: !this.state.feeChosen,
       queryResults: [],
-      fee: arr
+      fee: arr,
     })
+    this.search.value = ''
   }
 
   handleRemove = (e, i) => {
@@ -195,8 +196,10 @@ class AddFee extends Component {
   render() {
 
     if(this.state.doRedirect) {
-        return <Redirect to={{pathname: '/removefee', state: {results}}} />
-    }
+        return <Redirect to={{pathname: '/removefee', state: {results: this.state.results}}} />
+    };
+
+    // eslint-disable-next-line
     const display = this.state.queryResults.map((ep, i) => {
       if(this.state.pagination === 1) {
         return (
@@ -243,7 +246,7 @@ class AddFee extends Component {
         </Card.Section>
       )
     })
-
+    // eslint-disable-next-line
     const displayStudents = this.state.students.map((ep, i) => {
       for(let item in this.state.customerList) {
         if(parseInt(this.state.customerList[item].id, 10) === ep.owner_id) {

@@ -119,7 +119,6 @@ app.post('/submitFee', (req, res) => {
         sendEmail()
     }
     
-
     async function sendEmail() {
         let transporter = nodemailer.createTransport({
             pool: true,
@@ -152,7 +151,7 @@ app.post('/submitFee', (req, res) => {
                 <p>Fee: ${product.title}</p>
                 <p>Price: ${product.price}</p>
                 <p>Student: ${student.child_name}</p>
-                <p>Please log in at shop.basised.com to pay this fee before the end of the month. If you have any questions or there was an error, please contact your school.</p>
+                <p>Please log in at shop.basised.com and check your cart to pay this fee before the end of the month. If you have any questions or there was an error, please contact your school.</p>
                 <p>Note: Kindergarten Tuition will now automatically be added on the 4th of each month.</p>
             `
     
@@ -179,6 +178,19 @@ app.post('/submitFee', (req, res) => {
     }
 })
 
+app.post('/searchMeta', (req, res) => {
+    console.log(req.body)
+    let data
+    func()
+    async function func() {
+        await axios.get(`https://${sk}:${ss}@basis-ed.myshopify.com/admin/customers/${req.body.id}/metafields.json`).then(res => {
+            console.log(res.data)
+            data = res.data
+        })
+        res.send(data)
+
+    }
+})
 
 
 const port = process.env.PORT || 5001
