@@ -190,13 +190,12 @@ class AddFee extends Component {
 
   handleRedirect = () => {
       this.setState({ doRedirect: true })
-      console.log(this.state.doRedirect)
   }
 
   render() {
 
     if(this.state.doRedirect) {
-        return <Redirect to={{pathname: '/removefee', state: {results: this.state.results}}} />
+        return <Redirect to={{pathname: '/removefee', state: {results: this.state.results, productResults: this.state.productResults}}} />
     };
 
     // eslint-disable-next-line
@@ -281,7 +280,7 @@ class AddFee extends Component {
           {this.state.pagination === 1 &&
             <Page
               fullWidth
-              title='BASIS Fee App'
+              title='Add Fee'
             >
               <form>
                 <strong>Enter Parent Name/Email</strong>
@@ -302,7 +301,7 @@ class AddFee extends Component {
           {this.state.pagination === 2 &&
             <Page
               fullWidth
-              title='BASIS Fee App'
+              title='Add Fee'
             >
               <form>
                 <strong>Enter Product/Fee Title</strong>

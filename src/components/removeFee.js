@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { Page, Card, Button } from '@shopify/polaris'
+import { Redirect } from 'react-router-dom'
 import axios from 'axios'
 
 export default class RemoveFee extends Component {
@@ -8,8 +9,9 @@ export default class RemoveFee extends Component {
         queryResults: [],
         customerChosen: false,
         customer: [],
-        metafields: []
-
+        metafields: [],
+        metaRemove: [],
+        doRedirect: false
     }
 
     handleInputChange = () => {
@@ -61,32 +63,60 @@ export default class RemoveFee extends Component {
                     let j = p.key.split('_')[0]
 
                     if(j === 'child' + i) {
+                        if(p.namespace === 'fee') {
+                            let j = this.props.location.state.productResults.filter(v => {if(v.variant_id ===  p.value){return (v.title)}})[0]
+                            if(j !== undefined) {
+                                p['title'] = j.title
+                            }
+                        }
                         students.push(p)
-                        
                     }
-                    
                 }
                 allStudents.push(students)
             }
+            console.log('%c AllStudents', 'color: lightPink; font-weight: bold;')
             console.log(allStudents)
             this.setState({metafields: allStudents})
             
         })
     }
-
-    getFees = (fees)  => {
+    
+    getFees = (fees, metaI)  => {
         let div = []
+        console.log('%c Fees', 'color: lightgreen; font-weight: bold;')
         console.log(fees)
         return fees.map((e, i) => (
+
             <div key = {i}>
-                <div>Fee {i + 1}: {e.value}</div>
-                <div>Fee Id: {e.id}</div>
+                <div className='button-container'><div>Fee {i + 1}: <strong>{e.title}</strong></div><Button plain onClick={() => this.handleRemove(e, metaI)}>remove</Button></div>
+                <div>Fee Id: {e.value}</div>
                 <br />
             </div>
-    ))}
+        ))
+    }
+
+    handleRemove = (e, metaI) => {
+        let arr = this.state.metafields
+        console.log(e)
+        console.log(this.state.metafields)
+        axios.post(`http://localhost:5001/removeMeta`, e).then(res => {
+            console.log(res.data)
+            arr[metaI].splice(arr[metaI].findIndex(v => v.id === e.id), 1)
+            this.setState({metafields: arr})
+            console.log(this.state.metafields)
+        })
+    }
+
+    handleRedirect = () => {
+        this.setState({ doRedirect: true})
+    }
     
 
     render() {
+
+        if(this.state.doRedirect) {
+            return <Redirect to = {{pathname: '/'}} />
+        }
 
         const display = this.state.queryResults.map((ep, i) => {
               return (
@@ -95,13 +125,12 @@ export default class RemoveFee extends Component {
                   <p className='queryResults'><strong>Email:</strong> {ep.email}</p>
                 </Card>
               )
-
         })
 
 
         const displayCustomer = this.state.customer.map((ep, i) => {
             return(
-                <Card key={i} title={ep.first_name + " " + ep.last_name} key={i} sectioned actions={[{content: 'Undo', onAction:this.handleAction}]}>
+                <Card key={i} title={ep.first_name + " " + ep.last_name}sectioned actions={[{content: 'Undo', onAction:this.handleAction}]}>
                   <p className='queryResults'><strong>Customer ID:</strong> {ep.id}</p>
                   <div className='button-container'><p className='queryResults'><strong>Email:</strong> {ep.email}</p><Button primary onClick={() => this.handleSearch(ep)}>Search</Button></div>
                 </Card>
@@ -115,14 +144,15 @@ export default class RemoveFee extends Component {
             let fees = ep.filter(student => student.namespace === 'fee')
             let school = ep.filter(student => student.namespace === 'children_school')
             let grade = ep.filter(student => student.namespace === 'children')
-            console.log(name, fees, school, grade)
+            console.log('%c Metafields', 'color: orange; font-weight: bold;')
+            console.log({name, fees, school, grade})
             return(
                 <Card sectioned key = {i}>
                     <div><strong>{name[0].value}</strong></div>
                     <div>School: {school[0].value}</div>
                     <div>Grade: {grade[0].value}</div>
                     <br />
-                    {this.getFees(fees)}
+                    {this.getFees(fees, i)}
                 </Card>
             )
 
@@ -134,7 +164,7 @@ export default class RemoveFee extends Component {
                 <Page
                 className='remove-page'
                 fullWidth
-                title='BASIS Fee App'
+                title='Remove Fee'
                 >
                     <form>
                         <strong>Enter Parent Name/Email</strong>
@@ -150,6 +180,7 @@ export default class RemoveFee extends Component {
                     <div>{display}</div>
                 </Page>
                 <div className='remove-card'>
+                    <div className='switchAddFee'><Button primary onClick={this.handleRedirect}>Add Fee</Button></div>
                     <Card sectioned title="Metafields" actions={[{content: 'Restart', onAction: this.handleAction}]}>
                         <p>
                             The results will show here after you have searched for a parent.
