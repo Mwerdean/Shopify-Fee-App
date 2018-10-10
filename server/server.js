@@ -152,10 +152,10 @@ app.post('/submitFee', (req, res) => {
                 <p>Price: ${product.price}</p>
                 <p>Student: ${student.child_name}</p>
                 <p>Please log in at shop.basised.com and check your cart to pay this fee before the end of the month. If you have any questions or there was an error, please contact your school.</p>
+                <p>Note: In the future Kindergarten Tuition will be automatically be added on the 4th of each month.</p>
                 `
                 
                 
-                // <p>Note: Kindergarten Tuition will now automatically be added on the 4th of each month.</p>
     
             let mailOptions = {
                 from: '"BASIS Payments" <matthew.werdean@basised.com',
@@ -202,6 +202,8 @@ app.post('/removeMeta', (req, res) => {
         res.sendStatus(200)
     }
 })
+
+
 
 
 const port = process.env.PORT || 5001

@@ -22,7 +22,9 @@ class AddFee extends Component {
     shipped: [],
     progress: 0,
     restart: false,
-    doRedirect: false
+    doRedirect: false,
+    qtys: [],
+    qtyButton: false
   }
   
   componentDidMount(){
@@ -46,6 +48,7 @@ class AddFee extends Component {
       }
     })
   }
+
 
   getInfo = () => {
     let i
@@ -184,13 +187,34 @@ class AddFee extends Component {
       students: [],
       shipped: [],
       progress: 0,
-      restart: false
+      restart: false,
+      qtys: [],
+      qtyButton: false
     })
   }
 
   handleRedirect = () => {
       this.setState({ doRedirect: true })
   }
+
+  handleQtyChange = (e, i) => {
+    let qty = this.state.qtys
+    console.log(e.target.value)
+    qty[i].value = e.target.value
+    this.setState({qtys: qty}, () => console.log(this.state.qtys))
+  }
+
+  handleAddQty = () => {
+    let qty = []
+
+    let count = this.state.students.length
+    console.log('count', count)
+    for(let i=0;i<count; i++) {
+        qty.push({id: i, value: '1'})
+    }
+    this.setState({qtys: qty, qtyButton: !this.state.qtyButton})
+  }
+
 
   render() {
 
@@ -247,6 +271,7 @@ class AddFee extends Component {
     })
     // eslint-disable-next-line
     const displayStudents = this.state.students.map((ep, i) => {
+        console.log(this.state.qtys, i)
       for(let item in this.state.customerList) {
         if(parseInt(this.state.customerList[item].id, 10) === ep.owner_id) {
           return (
@@ -260,6 +285,7 @@ class AddFee extends Component {
                   <div><p>{this.state.customerList[item].full_name}</p></div>
                   <div><strong>{ep.child_name}</strong></div>
                 </div>
+                  {this.state.qtyButton &&<input type='number' placeholder='1' className='qty-input' value={this.state.qtys[i].value} onChange={e => this.handleQtyChange(e, i)}/>}
                 <div>
                   <input  type="checkbox" className="check check2" onClick={() => this.handleToggle(ep, i)}/>
                 </div>
@@ -364,6 +390,7 @@ class AddFee extends Component {
                 <Card.Section>
                   <p className='button-container'>Please select the students to apply the fee to. <button type="button" className='Polaris-Button Polaris-Button--plain' onClick={this.continue}><span className="Polaris-Button__Content">Restart</span></button></p>
                 </Card.Section>
+                <div><button onClick={this.handleAddQty}>Change Quantities</button></div>
                 {displayStudents}
                 {this.state.sentStudents && <div className='sendFeeButton'><Button primary onClick={this.submitFee}>Send Fee</Button></div>}
                 {this.state.isLoading && <div className='sendFeeButton'><p>Attaching Fees...</p><Spinner size='small' color='teal' /></div>}
