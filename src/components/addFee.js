@@ -28,7 +28,7 @@ class AddFee extends Component {
   }
   
   componentDidMount(){
-    axios.get(`http://localhost:5001/database`).then(res => {
+    axios.get(`/database`).then(res => {
       console.log(res.data)
       this.setState({ 
         results: res.data[0].recordset,
@@ -110,7 +110,7 @@ class AddFee extends Component {
       customers: this.state.customerList
     }
 
-    axios.post(`http://localhost:5001/sendStudents`, obj).then(res => {
+    axios.post(`/sendStudents`, obj).then(res => {
       console.log('sendStudents Data:', res.data)
       this.setState({ isLoading: !this.state.isLoading, sentStudents: true, queryResults: [], pagination2: 2, students: res.data})
     })
@@ -130,13 +130,14 @@ class AddFee extends Component {
     return options
   }
 
-  handleToggle = (ep) => {
+  handleToggle = (ep, i) => {
     let arr = this.state.shipped
     let isTrue = false
     let position = null
-
+    let newEp = ep
+    newEp['id'] = i
     for(let k = 0; k<arr.length; k++) {
-      if(arr[k] === ep) {
+      if(arr[k] === newEp) {
         isTrue = true
         position = k
       }
@@ -145,7 +146,7 @@ class AddFee extends Component {
     if(isTrue) {
       arr.splice(position, 1)
     } else {
-      arr.push(ep)
+      arr.push(newEp)
     }
     this.setState({ shipped: arr })
     console.log(this.state.shipped)
@@ -156,9 +157,10 @@ class AddFee extends Component {
     const obj = {
       product: this.state.fee,
       customers: this.state.customerList,
-      shipped: this.state.shipped
+      shipped: this.state.shipped,
+      qtys: this.state.qtys
     }
-    axios.post(`http://localhost:5001/submitFee`, obj).then(res => {
+    axios.post(`/submitFee`, obj).then(res => {
       console.log(res.data)
     this.setState({isLoading: false, restart: true})
 
@@ -271,7 +273,6 @@ class AddFee extends Component {
     })
     // eslint-disable-next-line
     const displayStudents = this.state.students.map((ep, i) => {
-        console.log(this.state.qtys, i)
       for(let item in this.state.customerList) {
         if(parseInt(this.state.customerList[item].id, 10) === ep.owner_id) {
           return (
@@ -390,7 +391,7 @@ class AddFee extends Component {
                 <Card.Section>
                   <p className='button-container'>Please select the students to apply the fee to. <button type="button" className='Polaris-Button Polaris-Button--plain' onClick={this.continue}><span className="Polaris-Button__Content">Restart</span></button></p>
                 </Card.Section>
-                <div><button onClick={this.handleAddQty}>Change Quantities</button></div>
+                {!this.state.qtyButton && <div className='chooseFee'><button className='Polaris-Button Polaris-Button--plain' onClick={this.handleAddQty}>Change Quantities</button></div>}
                 {displayStudents}
                 {this.state.sentStudents && <div className='sendFeeButton'><Button primary onClick={this.submitFee}>Send Fee</Button></div>}
                 {this.state.isLoading && <div className='sendFeeButton'><p>Attaching Fees...</p><Spinner size='small' color='teal' /></div>}

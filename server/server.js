@@ -9,6 +9,7 @@ const app = express()
 app.use(cors())
 app.use(bodyParser.json())
 require('dotenv').config()
+app.use(express.static(`${__dirname}/../build`));
 
 const sk = process.env.SHOPIFY_API_KEY
 const ss = process.env.SHOPIFY_API_SECRET
@@ -21,6 +22,7 @@ const config = {
     dialect: `mssql`,
 }
 
+const sleep = (milliseconds=100) => new Promise(resolve => setTimeout(resolve, milliseconds))
 
 app.get('/database', (req, res) => {
     let arr = []
@@ -29,13 +31,17 @@ app.get('/database', (req, res) => {
       callMe()
     })
     async function callMe() {
-      const customer = await sql.query`select * from customers`
-      arr.push(customer)
-      const products = await sql.query`select * from products`
-      arr.push(products)
+        try {
+            const customer = await sql.query`select * from customers`
+            const products = await sql.query`select * from products`
+            arr.push(customer)
+            arr.push(products) 
+
+        } catch (err) {
+            console.log(err)
+        }
       sql.close()
       res.send(arr)
-      console.log(err)
     }
   })
 
@@ -96,30 +102,70 @@ app.post('/submitFee', (req, res) => {
             if(shipped.fees) {
                 fee = shipped.fees
             }
-            const key = shipped.child_key + "_fee" + (fee + 1)
-
-            obj = 
-            {
-                "customer": {
-                    "id": shipped.owner_id,
-                    "metafields": [
-                        {
-                            "key": key,
-                            "value": req.body.product[0].variant_id,
-                            "value_type": "string",
-                            "namespace": "fee",
-                        }
-                    ]
+       
+            let qty = 0
+            
+            for(let item2 in req.body.qtys) {
+                if(req.body.shipped[item].id === req.body.qtys[item2].id){
+                    qty = parseInt(req.body.qtys[item2].value)
                 }
             }
-            await axios.put(`https://${sk}:${ss}@basis-ed.myshopify.com/admin/customers/${shipped.owner_id}.json`, obj).then(res => {
-                console.log('Attached')
-            }).catch(error => console.log('Add metafield error', error))
+            console.log('qty', qty)
+            if(qty > 1) {
+                for(let i = 0; i<qty; i++) {
+                    const key = shipped.child_key + "_fee" + (fee + 1)
+                    obj = 
+                    {
+                        "customer": {
+                            "id": shipped.owner_id,
+                            "metafields": [
+                                {
+                                    "key": key,
+                                    "value": req.body.product[0].variant_id,
+                                    "value_type": "string",
+                                    "namespace": "fee",
+                                }
+                            ]
+                        }
+                    }
+                    console.log('fee', fee)
+                    await axios.put(`https://${sk}:${ss}@basis-ed.myshopify.com/admin/customers/${shipped.owner_id}.json`, obj).then(res => {
+                        console.log('Attached')
+                    }).catch(error => console.log('Add metafield error', error))
+                    await sleep(100)
+                    fee++
+                }
+            } else {
+                const key = shipped.child_key + "_fee" + (fee + 1)
+                obj = 
+                {
+                    "customer": {
+                        "id": shipped.owner_id,
+                        "metafields": [
+                            {
+                                "key": key,
+                                "value": req.body.product[0].variant_id,
+                                "value_type": "string",
+                                "namespace": "fee",
+                            }
+                        ]
+                    }
+                }
+                await axios.put(`https://${sk}:${ss}@basis-ed.myshopify.com/admin/customers/${shipped.owner_id}.json`, obj).then(res => {
+                        console.log('Attached')
+                    }).catch(error => console.log('Add metafield error', error))
+            }
         }
         sendEmail()
     }
     
     async function sendEmail() {
+        try {
+            await sql.connect(config)
+        } catch (err) {
+            console.log(err)
+        }
+        
         let transporter = nodemailer.createTransport({
             pool: true,
             rateDelta: 1000,
@@ -134,27 +180,43 @@ app.post('/submitFee', (req, res) => {
 
         })
         for(let item in req.body.shipped) {
+
             const product = req.body.product[0]
             const student = req.body.shipped[item]
             let email = null
-            
+            let firstName= null
+            let lastName=null
             for(let i=0; i<req.body.customers.length; i++) {
                 if(parseInt(req.body.customers[i].id, 10) === student.owner_id) {
                     email = req.body.customers[i].email
+                    firstName = req.body.customers[i].first_name
+                    lastName = req.body.customers[i].last_name
                 }
             }
-            console.log("email", email)
+            // const request = new sql.Request()
+            // request.query(`insert into fee_tracker VALUES (${student.owner_id}, ${lastName}, ${firstName}, ${product.title}, ${product.price}, ${student.child_name}, ${product.vendor});`, (err, result) => {
+            //     if(err) console.log(err)
+            // })
 
+            try {
+                await sql.query`insert into fee_tracker VALUES (${student.owner_id.toString()}, ${lastName}, ${firstName}, ${product.title}, ${product.price}, ${student.child_name}, ${product.vendor});`
+                
+            } catch (err) {
+                console.log(err)
+            }
+        console.log(student.owner_id, lastName, firstName, product.title, product.price, student.child_name, product.vendor)
+            console.log("email", email)
+            
             const output = `
                 <p>A new fee was added to your account</p>
                 <h3>Details</h3>
                 <p>Fee: ${product.title}</p>
                 <p>Price: ${product.price}</p>
                 <p>Student: ${student.child_name}</p>
-                <p>Please log in at shop.basised.com and check your cart to pay this fee before the end of the month. If you have any questions or there was an error, please contact your school.</p>
-                <p>Note: In the future Kindergarten Tuition will be automatically be added on the 4th of each month.</p>
+                <p>Please log in at shop.basised.com and check your cart to pay this fee before the end of the month. If your cart did not update properly, please log out back in agian. If you have any questions or there was an error, please contact your school.</p>
                 `
                 
+                // <p>Note: In the future Kindergarten Tuition will be automatically be added on the 4th of each month.</p>
                 
     
             let mailOptions = {
@@ -174,6 +236,7 @@ app.post('/submitFee', (req, res) => {
     
             })
         }
+        sql.close()
         res.sendStatus(200)
     }
 })
@@ -188,7 +251,6 @@ app.post('/searchMeta', (req, res) => {
             data = res.data
         })
         res.send(data)
-
     }
 })
 
@@ -202,9 +264,10 @@ app.post('/removeMeta', (req, res) => {
         res.sendStatus(200)
     }
 })
-
-
-
+const path = require('path')
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname + '../build/index.html'));
+  });
 
 const port = process.env.PORT || 5001
 app.listen(port, function() {

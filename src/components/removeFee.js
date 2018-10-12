@@ -46,7 +46,7 @@ export default class RemoveFee extends Component {
     }
 
     handleSearch = (e) => {
-        axios.post(`http://localhost:5001/searchMeta`, e).then(res => {
+        axios.post(`/searchMeta`, e).then(res => {
             console.log(res.data.metafields)
             let count = 0
             for(let item in res.data.metafields) {
@@ -80,7 +80,7 @@ export default class RemoveFee extends Component {
             
         })
     }
-    
+
     getFees = (fees, metaI)  => {
         let div = []
         console.log('%c Fees', 'color: lightgreen; font-weight: bold;')
@@ -99,7 +99,7 @@ export default class RemoveFee extends Component {
         let arr = this.state.metafields
         console.log(e)
         console.log(this.state.metafields)
-        axios.post(`http://localhost:5001/removeMeta`, e).then(res => {
+        axios.post(`/removeMeta`, e).then(res => {
             console.log(res.data)
             arr[metaI].splice(arr[metaI].findIndex(v => v.id === e.id), 1)
             this.setState({metafields: arr})
@@ -136,9 +136,9 @@ export default class RemoveFee extends Component {
                 </Card>
             )
         })
-
+    
         const displayMetafields = this.state.metafields.map((ep, i) => {
-     
+        
             
             let name = ep.filter(student => student.namespace === 'children_names')
             let fees = ep.filter(student => student.namespace === 'fee')
@@ -158,6 +158,11 @@ export default class RemoveFee extends Component {
 
 
         })
+        function createPost(post, callback) {
+            setTimeout(() => {
+
+            })
+        }
 
         return(
             <div className='container'>
