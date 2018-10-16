@@ -193,14 +193,9 @@ app.post('/submitFee', (req, res) => {
                     lastName = req.body.customers[i].last_name
                 }
             }
-            // const request = new sql.Request()
-            // request.query(`insert into fee_tracker VALUES (${student.owner_id}, ${lastName}, ${firstName}, ${product.title}, ${product.price}, ${student.child_name}, ${product.vendor});`, (err, result) => {
-            //     if(err) console.log(err)
-            // })
 
             try {
-                await sql.query`insert into fee_tracker VALUES (${student.owner_id.toString()}, ${lastName}, ${firstName}, ${product.title}, ${product.price}, ${student.child_name}, ${product.vendor});`
-                
+                await sql.query`insert into fee_tracker VALUES (${student.owner_id.toString()}, ${lastName}, ${firstName}, ${product.title}, ${product.price}, ${student.child_name}, ${product.vendor});`    
             } catch (err) {
                 console.log(err)
             }
@@ -264,10 +259,11 @@ app.post('/removeMeta', (req, res) => {
         res.sendStatus(200)
     }
 })
+
 const path = require('path')
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname + '../build/index.html'));
-  });
+});
 
 const port = process.env.PORT || 5001
 app.listen(port, function() {

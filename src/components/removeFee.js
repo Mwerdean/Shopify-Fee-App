@@ -158,11 +158,7 @@ export default class RemoveFee extends Component {
 
 
         })
-        function createPost(post, callback) {
-            setTimeout(() => {
 
-            })
-        }
 
         return(
             <div className='container'>
